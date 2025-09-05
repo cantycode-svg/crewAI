@@ -55,12 +55,11 @@ class Knowledge(BaseModel):
         if self.storage is None:
             raise ValueError("Storage is not initialized.")
 
-        results = self.storage.search(
+        return self.storage.search(
             query,
             limit=results_limit,
             score_threshold=score_threshold,
         )
-        return results
 
     def add_sources(self):
         try:

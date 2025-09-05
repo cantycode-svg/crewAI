@@ -139,7 +139,8 @@ ignore = [
 "tests/**/*.py" = ["S101"]  # Allow assert statements in tests
 
 [tool.mypy]
-exclude = ["src/crewai/cli/templates", "tests"]
+exclude = ["src/crewai/cli/templates", "tests/"]
+
 
 [tool.bandit]
 exclude_dirs = ["src/crewai/cli/templates"]

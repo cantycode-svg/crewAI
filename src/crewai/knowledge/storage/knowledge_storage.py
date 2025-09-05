@@ -55,17 +55,15 @@ class KnowledgeStorage(BaseKnowledgeStorage):
             )
             query_text = " ".join(query) if len(query) > 1 else query[0]
 
-            search_results = client.search(
+            return client.search(
                 collection_name=collection_name,
                 query=query_text,
                 limit=limit,
                 metadata_filter=metadata_filter or {},
                 score_threshold=score_threshold,
             )
-
-            return search_results
         except Exception as e:
-            logging.error(f"Error during knowledge search: {str(e)}")
+            logging.error(f"Error during knowledge search: {e!s}")
             return []
 
     def reset(self) -> None:
@@ -78,7 +76,7 @@ class KnowledgeStorage(BaseKnowledgeStorage):
             )
             client.delete_collection(collection_name=collection_name)
         except Exception as e:
-            logging.error(f"Error during knowledge reset: {str(e)}")
+            logging.error(f"Error during knowledge reset: {e!s}")
 
     def save(self, documents: list[str]) -> None:
         try:

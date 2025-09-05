@@ -16,8 +16,7 @@ class MockCrew:
 @pytest.fixture
 def mock_mem0_memory():
     """Fixture to create a mock Memory instance"""
-    mock_memory = MagicMock(spec=Memory)
-    return mock_memory
+    return MagicMock(spec=Memory)
 
 
 @pytest.fixture
@@ -82,8 +81,7 @@ def test_mem0_storage_initialization(mem0_storage_with_mocked_config, mock_mem0_
 @pytest.fixture
 def mock_mem0_memory_client():
     """Fixture to create a mock MemoryClient instance"""
-    mock_memory = MagicMock(spec=MemoryClient)
-    return mock_memory
+    return MagicMock(spec=MemoryClient)
 
 
 @pytest.fixture
@@ -105,8 +103,7 @@ def mem0_storage_with_memory_client_using_config_from_crew(mock_mem0_memory_clie
             "infer": True,
         }
 
-        mem0_storage = Mem0Storage(type="short_term", crew=crew, config=embedder_config)
-        return mem0_storage
+        return Mem0Storage(type="short_term", crew=crew, config=embedder_config)
 
 
 @pytest.fixture
@@ -123,8 +120,7 @@ def mem0_storage_with_memory_client_using_explictly_config(
         crew = MockCrew()
         new_config = {"provider": "mem0", "config": {"api_key": "new-api-key"}}
 
-        mem0_storage = Mem0Storage(type="short_term", crew=crew, config=new_config)
-        return mem0_storage
+        return Mem0Storage(type="short_term", crew=crew, config=new_config)
 
 
 def test_mem0_storage_with_memory_client_initialization(

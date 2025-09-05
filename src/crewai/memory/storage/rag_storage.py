@@ -1,11 +1,9 @@
 import logging
-import os
-import shutil
 import warnings
 from typing import Any
 
 from crewai.rag.chromadb.config import ChromaDBConfig
-from crewai.rag.config.utils import clear_rag_config, get_rag_client, set_rag_config
+from crewai.rag.config.utils import get_rag_client, set_rag_config
 from crewai.rag.embeddings.factory import get_embedding_function
 from crewai.rag.storage.base_rag_storage import BaseRAGStorage
 from crewai.rag.types import BaseRecord
@@ -81,7 +79,7 @@ class RAGStorage(BaseRAGStorage):
 
             client.add_documents(collection_name=collection_name, documents=[document])
         except Exception as e:
-            logging.error(f"Error during {self.type} save: {str(e)}")
+            logging.error(f"Error during {self.type} save: {e!s}")
 
     def search(
         self,
@@ -97,17 +95,15 @@ class RAGStorage(BaseRAGStorage):
                 if self.agents
                 else f"memory_{self.type}"
             )
-            search_results = client.search(
+            return client.search(
                 collection_name=collection_name,
                 query=query,
                 limit=limit,
                 metadata_filter=filter or {},
                 score_threshold=score_threshold,
             )
-
-            return search_results
         except Exception as e:
-            logging.error(f"Error during {self.type} search: {str(e)}")
+            logging.error(f"Error during {self.type} search: {e!s}")
             return []
 
     def reset(self) -> None:
@@ -128,4 +124,4 @@ class RAGStorage(BaseRAGStorage):
             else:
                 raise Exception(
                     f"An error occurred while resetting the {self.type} memory: {e}"
-                )
+                ) from e

@@ -517,7 +517,7 @@ def test_excel_knowledge_source(mock_vector_db, tmpdir):
     """Test ExcelKnowledgeSource with a simple Excel file."""
 
     # Create an Excel file with sample data
-    import pandas as pd
+    import pandas as pd  # type: ignore[import-untyped]
 
     excel_data = {
         "Name": ["Brandon", "Alice", "Bob"],
@@ -568,8 +568,8 @@ def test_docling_source(mock_vector_db):
 
 
 @pytest.mark.vcr
-def test_multiple_docling_sources():
-    urls: List[Union[Path, str]] = [
+def test_multiple_docling_sources() -> None:
+    urls: list[Path | str] = [
         "https://lilianweng.github.io/posts/2024-11-28-reward-hacking/",
         "https://lilianweng.github.io/posts/2024-07-07-hallucination/",
     ]
