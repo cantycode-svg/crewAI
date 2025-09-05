@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from typing import Any
 
-from mem0 import Memory, MemoryClient  # type: ignore[import-untyped]
+from mem0 import Memory, MemoryClient  # type: ignore[import-untyped,import-not-found]
 
 from crewai.memory.storage.interface import Storage
 
