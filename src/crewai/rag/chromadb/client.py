@@ -4,11 +4,10 @@ import logging
 from typing import Any
 
 from chromadb.api.types import (
-    Embeddable,
-    QueryResult,
+    EmbeddingFunction as ChromaEmbeddingFunction,
 )
 from chromadb.api.types import (
-    EmbeddingFunction as ChromaEmbeddingFunction,
+    QueryResult,
 )
 from typing_extensions import Unpack
 
@@ -308,10 +307,12 @@ class ChromaDBClient(BaseClient):
         )
 
         prepared = _prepare_documents_for_chromadb(documents)
+        # ChromaDB doesn't accept empty metadata dicts, so pass None if all are empty
+        metadatas = prepared.metadatas if any(m for m in prepared.metadatas) else None
         collection.upsert(
             ids=prepared.ids,
             documents=prepared.texts,
-            metadatas=prepared.metadatas,
+            metadatas=metadatas,
         )
 
     async def aadd_documents(self, **kwargs: Unpack[BaseCollectionAddParams]) -> None:
@@ -349,10 +350,12 @@ class ChromaDBClient(BaseClient):
             embedding_function=self.embedding_function,
         )
         prepared = _prepare_documents_for_chromadb(documents)
+        # ChromaDB doesn't accept empty metadata dicts, so pass None if all are empty
+        metadatas = prepared.metadatas if any(m for m in prepared.metadatas) else None
         await collection.upsert(
             ids=prepared.ids,
             documents=prepared.texts,
-            metadatas=prepared.metadatas,
+            metadatas=metadatas,
         )
 
     def search(

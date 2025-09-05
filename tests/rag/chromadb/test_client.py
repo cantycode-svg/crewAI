@@ -303,6 +303,25 @@ class TestChromaDBClient:
         call_args = mock_collection.upsert.call_args
         assert call_args[1]["metadatas"] == [{}, {}, {"key": "value"}]
 
+    def test_add_documents_all_without_metadata(
+        self, client, mock_chromadb_client
+    ) -> None:
+        """Test add_documents when all documents have no metadata."""
+        mock_collection = Mock()
+        mock_chromadb_client.get_collection.return_value = mock_collection
+
+        documents: list[BaseRecord] = [
+            {"content": "Document 1"},
+            {"content": "Document 2"},
+            {"content": "Document 3"},
+        ]
+
+        client.add_documents(collection_name="test_collection", documents=documents)
+
+        mock_collection.upsert.assert_called_once()
+        call_args = mock_collection.upsert.call_args
+        assert call_args[1]["metadatas"] is None
+
     def test_add_documents_empty_list_raises_error(
         self, client, mock_chromadb_client
     ) -> None:
