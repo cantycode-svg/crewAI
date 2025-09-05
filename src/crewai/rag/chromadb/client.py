@@ -5,8 +5,10 @@ from typing import Any
 
 from chromadb.api.types import (
     Embeddable,
-    EmbeddingFunction as ChromaEmbeddingFunction,
     QueryResult,
+)
+from chromadb.api.types import (
+    EmbeddingFunction as ChromaEmbeddingFunction,
 )
 from typing_extensions import Unpack
 
@@ -23,13 +25,13 @@ from crewai.rag.chromadb.utils import (
     _process_query_results,
     _sanitize_collection_name,
 )
-from crewai.utilities.logger_utils import suppress_logging
 from crewai.rag.core.base_client import (
     BaseClient,
-    BaseCollectionParams,
     BaseCollectionAddParams,
+    BaseCollectionParams,
 )
 from crewai.rag.types import SearchResult
+from crewai.utilities.logger_utils import suppress_logging
 
 
 class ChromaDBClient(BaseClient):
@@ -46,7 +48,7 @@ class ChromaDBClient(BaseClient):
     def __init__(
         self,
         client: ChromaDBClientType,
-        embedding_function: ChromaEmbeddingFunction[Embeddable],
+        embedding_function: ChromaEmbeddingFunction,
     ) -> None:
         """Initialize ChromaDBClient with client and embedding function.
 
