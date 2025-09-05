@@ -5,13 +5,14 @@ from collections.abc import Mapping
 from typing import Literal, TypeGuard, cast
 
 from chromadb.api import AsyncClientAPI, ClientAPI
+from chromadb.api.models.AsyncCollection import AsyncCollection
+from chromadb.api.models.Collection import Collection
 from chromadb.api.types import (
     Include,
     IncludeEnum,
     QueryResult,
 )
-from chromadb.api.models.AsyncCollection import AsyncCollection
-from chromadb.api.models.Collection import Collection
+
 from crewai.rag.chromadb.constants import (
     DEFAULT_COLLECTION,
     INVALID_CHARS_PATTERN,
