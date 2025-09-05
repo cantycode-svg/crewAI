@@ -66,7 +66,7 @@ def _prepare_documents_for_chromadb(
     """
     ids: list[str] = []
     texts: list[str] = []
-    metadatas: list[Mapping[str, str | int | float | bool]] = []
+    metadatas: list[Mapping[str, str | int | float | bool] | None] = []
 
     for doc in documents:
         if "doc_id" in doc:
@@ -79,11 +79,14 @@ def _prepare_documents_for_chromadb(
         metadata = doc.get("metadata")
         if metadata:
             if isinstance(metadata, list):
-                metadatas.append(metadata[0] if metadata else {})
+                if metadata and metadata[0]:
+                    metadatas.append(metadata[0])
+                else:
+                    metadatas.append(None)
             else:
                 metadatas.append(metadata)
         else:
-            metadatas.append({})
+            metadatas.append(None)
 
     return PreparedDocuments(ids, texts, metadatas)
 
@@ -272,7 +275,7 @@ def _sanitize_collection_name(
         sanitized = sanitized[:-1] + "z"
 
     if len(sanitized) < MIN_COLLECTION_LENGTH:
-        sanitized = sanitized + "x" * (MIN_COLLECTION_LENGTH - len(sanitized))
+        sanitized += "x" * (MIN_COLLECTION_LENGTH - len(sanitized))
     if len(sanitized) > max_collection_length:
         sanitized = sanitized[:max_collection_length]
         if not sanitized[-1].isalnum():
