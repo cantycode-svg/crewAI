@@ -45,12 +45,12 @@ class PreparedDocuments(NamedTuple):
     Attributes:
         ids: List of document IDs
         texts: List of document texts
-        metadatas: List of document metadata mappings (or None for no metadata)
+        metadatas: List of document metadata mappings (empty dict for no metadata)
     """
 
     ids: list[str]
     texts: list[str]
-    metadatas: list[Mapping[str, str | int | float | bool] | None]
+    metadatas: list[Mapping[str, str | int | float | bool]]
 
 
 class ExtractedSearchParams(NamedTuple):

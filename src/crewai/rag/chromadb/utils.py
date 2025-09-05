@@ -66,7 +66,7 @@ def _prepare_documents_for_chromadb(
     """
     ids: list[str] = []
     texts: list[str] = []
-    metadatas: list[Mapping[str, str | int | float | bool] | None] = []
+    metadatas: list[Mapping[str, str | int | float | bool]] = []
 
     for doc in documents:
         if "doc_id" in doc:
@@ -79,14 +79,11 @@ def _prepare_documents_for_chromadb(
         metadata = doc.get("metadata")
         if metadata:
             if isinstance(metadata, list):
-                if metadata and metadata[0]:
-                    metadatas.append(metadata[0])
-                else:
-                    metadatas.append(None)
+                metadatas.append(metadata[0] if metadata and metadata[0] else {})
             else:
                 metadatas.append(metadata)
         else:
-            metadatas.append(None)
+            metadatas.append({})
 
     return PreparedDocuments(ids, texts, metadatas)
 

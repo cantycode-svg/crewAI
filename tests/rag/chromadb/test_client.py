@@ -285,6 +285,24 @@ class TestChromaDBClient:
             metadatas=[{"source": "test1"}, {"source": "test2"}],
         )
 
+    def test_add_documents_without_metadata(self, client, mock_chromadb_client) -> None:
+        """Test add_documents with documents that have no metadata."""
+        mock_collection = Mock()
+        mock_chromadb_client.get_collection.return_value = mock_collection
+
+        documents: list[BaseRecord] = [
+            {"content": "Document without metadata"},
+            {"content": "Another document", "metadata": None},
+            {"content": "Document with metadata", "metadata": {"key": "value"}},
+        ]
+
+        client.add_documents(collection_name="test_collection", documents=documents)
+
+        # Verify upsert was called with empty dicts for missing metadata
+        mock_collection.upsert.assert_called_once()
+        call_args = mock_collection.upsert.call_args
+        assert call_args[1]["metadatas"] == [{}, {}, {"key": "value"}]
+
     def test_add_documents_empty_list_raises_error(
         self, client, mock_chromadb_client
     ) -> None:
@@ -357,6 +375,31 @@ class TestChromaDBClient:
             documents=["First document", "Second document"],
             metadatas=[{"source": "test1"}, {"source": "test2"}],
         )
+
+    @pytest.mark.asyncio
+    async def test_aadd_documents_without_metadata(
+        self, async_client, mock_async_chromadb_client
+    ) -> None:
+        """Test aadd_documents with documents that have no metadata."""
+        mock_collection = AsyncMock()
+        mock_async_chromadb_client.get_collection = AsyncMock(
+            return_value=mock_collection
+        )
+
+        documents: list[BaseRecord] = [
+            {"content": "Document without metadata"},
+            {"content": "Another document", "metadata": None},
+            {"content": "Document with metadata", "metadata": {"key": "value"}},
+        ]
+
+        await async_client.aadd_documents(
+            collection_name="test_collection", documents=documents
+        )
+
+        # Verify upsert was called with empty dicts for missing metadata
+        mock_collection.upsert.assert_called_once()
+        call_args = mock_collection.upsert.call_args
+        assert call_args[1]["metadatas"] == [{}, {}, {"key": "value"}]
 
     @pytest.mark.asyncio
     async def test_aadd_documents_empty_list_raises_error(
