@@ -609,11 +609,11 @@ class Agent(BaseAgent):
         tools = agent_tools.tools()
         return tools
 
-    def get_platform_tools(self, apps_list: List[str]) -> List[BaseTool]:
+    def get_platform_tools(self, apps: List[str], actions: List[str]) -> List[BaseTool]:
         try:
             from crewai_tools.tools.crewai_platform_tools import CrewaiPlatformTools  # type: ignore
 
-            platform_tools = CrewaiPlatformTools(apps=apps_list)
+            platform_tools = CrewaiPlatformTools(apps=apps, actions=actions)
             return platform_tools
         except Exception:
             return []
