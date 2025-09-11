@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 from copy import copy as shallow_copy
 from hashlib import md5
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar
 
 from pydantic import (
     UUID4,
@@ -30,6 +30,25 @@ from crewai.utilities.string_utils import interpolate_only
 
 T = TypeVar("T", bound="BaseAgent")
 
+PlatformApp = Literal[
+    "asana",
+    "box",
+    "clickup",
+    "github",
+    "gmail",
+    "google_calendar",
+    "google_sheets",
+    "hubspot",
+    "jira",
+    "linear",
+    "notion",
+    "salesforce",
+    "shopify",
+    "slack",
+    "stripe",
+    "zendesk",
+]
+
 
 class BaseAgent(ABC, BaseModel):
     """Abstract Base Class for all third party agents compatible with CrewAI.
@@ -56,6 +75,7 @@ class BaseAgent(ABC, BaseModel):
         knowledge_sources: Knowledge sources for the agent.
         knowledge_storage: Custom knowledge storage for the agent.
         security_config: Security configuration for the agent, including fingerprinting.
+        apps: List of enterprise applications that the agent can access through CrewAI Enterprise Tools.
 
 
     Methods:
@@ -65,6 +85,8 @@ class BaseAgent(ABC, BaseModel):
             Abstract method to create an agent executor.
         get_delegation_tools(agents: List["BaseAgent"]):
             Abstract method to set the agents task tools for handling delegation and question asking to other agents in crew.
+        get_platform_tools(apps_list: List[PlatformApp]):
+            Abstract method to get platform tools for the specified list of applications.
         get_output_converter(llm, model, instructions):
             Abstract method to get the converter class for the agent to create json/pydantic outputs.
         interpolate_inputs(inputs: Dict[str, Any]) -> None:
@@ -160,6 +182,10 @@ class BaseAgent(ABC, BaseModel):
         default=None,
         description="Knowledge configuration for the agent such as limits and threshold",
     )
+    apps: Optional[List[PlatformApp]] = Field(
+        default=None,
+        description="List of applications that the agent can access through CrewAI Platform",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -194,6 +220,14 @@ class BaseAgent(ABC, BaseModel):
                     "an object with 'name', 'func', and 'description' attributes."
                 )
         return processed_tools
+
+    @field_validator("apps")
+    @classmethod
+    def validate_apps(cls, apps: Optional[List[PlatformApp]]) -> Optional[List[PlatformApp]]:
+        if not apps:
+            return apps
+
+        return list(set(apps))
 
     @model_validator(mode="after")
     def validate_and_set_attributes(self):
@@ -266,6 +300,10 @@ class BaseAgent(ABC, BaseModel):
         """Set the task tools that init BaseAgenTools class."""
         pass
 
+    @abstractmethod
+    def get_platform_tools(self, apps: List[PlatformApp]) -> List[BaseTool]:
+        pass
+
     def copy(self: T) -> T:  # type: ignore # Signature of "copy" incompatible with supertype "BaseModel"
         """Create a deep copy of the Agent."""
         exclude = {
@@ -282,6 +320,7 @@ class BaseAgent(ABC, BaseModel):
             "knowledge_sources",
             "knowledge_storage",
             "knowledge",
+            "apps",
         }
 
         # Copy llm
