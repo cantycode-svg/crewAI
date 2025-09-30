@@ -26,12 +26,22 @@ def run_my_crew(inputs):
     return result
 
 app = FastAPI()
+
 class CrewInput(BaseModel):
     input_data: dict
+
 @app.get("/")
 def healthcheck():
     return {"status": "ok", "message": "CrewAI FastAPI is live."}
+
 @app.post("/run_crew/")
 async def run_crew(input: CrewInput):
-    result = run_my_crew(input.input_data)
-    return {"result": result}
+    try:
+        result = run_my_crew(input.input_data)
+        return {"result": result}
+    except Exception as e:
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "status": "failed"
+        }
