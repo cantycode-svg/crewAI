@@ -1,10 +1,16 @@
 import json
+import logging
 import os
 import pickle
 from datetime import datetime
 from typing import Any, TypedDict
 
+from supabase import Client, create_client
 from typing_extensions import Unpack
+
+from crewai.utilities.errors import DatabaseError, DatabaseOperationError
+
+logger = logging.getLogger(__name__)
 
 
 class LogEntry(TypedDict, total=False):
@@ -27,48 +33,79 @@ class LogEntry(TypedDict, total=False):
 
 
 class FileHandler:
-    """Handler for file operations supporting both JSON and text-based logging.
+    """Handler for logging operations using Supabase-based storage.
+
+    All log entries are written to the 'logs' table in Supabase.
+    Local file operations are bypassed in favor of cloud storage.
 
     Attributes:
-        _path: The path to the log file.
+        client: Supabase client instance.
+        supabase_url: Supabase project URL.
+        supabase_key: Supabase project API key.
     """
 
-    def __init__(self, file_path: bool | str) -> None:
-        """Initialize the FileHandler with the specified file path.
-        Args:
-            file_path: Path to the log file or boolean flag.
-        """
-        self._initialize_path(file_path)
-
-    def _initialize_path(self, file_path: bool | str) -> None:
-        """Initialize the file path based on the input type.
+    def __init__(self, file_path: bool | str | None = None) -> None:
+        """Initialize the FileHandler with Supabase connection.
 
         Args:
-            file_path: Path to the log file or boolean flag.
+            file_path: Ignored parameter for backward compatibility.
+                      All logging now goes to Supabase.
 
         Raises:
-            ValueError: If file_path is neither a string nor a boolean.
+            DatabaseOperationError: If connection parameters are missing or initialization fails.
         """
-        if file_path is True:  # File path is boolean True
-            self._path = os.path.join(os.curdir, "logs.txt")
+        self.supabase_url = os.getenv("SUPABASE_URL")
+        self.supabase_key = os.getenv("SUPABASE_KEY")
 
-        elif isinstance(file_path, str):  # File path is a string
-            if file_path.endswith((".json", ".txt")):
-                self._path = (
-                    file_path  # No modification if the file ends with .json or .txt
-                )
-            else:
-                self._path = (
-                    file_path + ".txt"
-                )  # Append .txt if the file doesn't end with .json or .txt
+        if not self.supabase_url or not self.supabase_key:
+            error_msg = "Supabase URL and Key must be provided as environment variables (SUPABASE_URL, SUPABASE_KEY)"
+            logger.error(error_msg)
+            raise DatabaseOperationError(error_msg, None)
 
-        else:
-            raise ValueError(
-                "file_path must be a string or boolean."
-            )  # Handle the case where file_path isn't valid
+        try:
+            self.client: Client = create_client(self.supabase_url, self.supabase_key)
+            self._verify_table_access()
+        except Exception as e:
+            error_msg = DatabaseError.format_error(DatabaseError.INIT_ERROR, e)
+            logger.error(error_msg)
+            raise DatabaseOperationError(error_msg, e) from e
+
+    def _verify_table_access(self) -> None:
+        """Verify that the 'logs' table exists and is accessible in Supabase.
+
+        Note: The 'logs' table should be created in Supabase with the following schema:
+
+        logs table:
+        - id (uuid, primary key, default: gen_random_uuid())
+        - timestamp (timestamp with time zone, default: now())
+        - task_name (text, nullable)
+        - task (text, nullable)
+        - agent (text, nullable)
+        - status (text, nullable)
+        - output (text, nullable)
+        - input (text, nullable)
+        - message (text, nullable)
+        - level (text, nullable)
+        - crew (text, nullable)
+        - flow (text, nullable)
+        - tool (text, nullable)
+        - error (text, nullable)
+        - duration (double precision, nullable)
+        - metadata (jsonb, nullable)
+
+        Raises:
+            DatabaseOperationError: If table cannot be accessed.
+        """
+        try:
+            self.client.table("logs").select("id").limit(1).execute()
+            logger.info("Successfully connected to Supabase and verified 'logs' table access")
+        except Exception as e:
+            error_msg = f"Failed to verify Supabase 'logs' table: {str(e)}"
+            logger.error(error_msg)
+            raise DatabaseOperationError(error_msg, e) from e
 
     def log(self, **kwargs: Unpack[LogEntry]) -> None:
-        """Log data with structured fields.
+        """Log data with structured fields to Supabase 'logs' table.
 
         Keyword Args:
             task_name: Name of the task.
@@ -87,43 +124,38 @@ class FileHandler:
             metadata: Additional metadata as a dictionary.
 
         Raises:
-            ValueError: If logging fails.
+            DatabaseOperationError: If logging fails.
         """
         try:
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            now = datetime.now().isoformat()
             log_entry = {"timestamp": now, **kwargs}
 
-            if self._path.endswith(".json"):
-                # Append log in JSON format
-                try:
-                    # Try reading existing content to avoid overwriting
-                    with open(self._path, encoding="utf-8") as read_file:
-                        existing_data = json.load(read_file)
-                        existing_data.append(log_entry)
-                except (json.JSONDecodeError, FileNotFoundError):
-                    # If no valid JSON or file doesn't exist, start with an empty list
-                    existing_data = [log_entry]
-
-                with open(self._path, "w", encoding="utf-8") as write_file:
-                    json.dump(existing_data, write_file, indent=4)
-                    write_file.write("\n")
-
-            else:
-                # Append log in plain text format
-                message = (
-                    f"{now}: "
-                    + ", ".join([f'{key}="{value}"' for key, value in kwargs.items()])
-                    + "\n"
+            # Convert metadata to JSON if present
+            if "metadata" in log_entry and isinstance(log_entry["metadata"], dict):
+                log_entry["metadata"] = json.loads(
+                    json.dumps(log_entry["metadata"])
                 )
-                with open(self._path, "a", encoding="utf-8") as file:
-                    file.write(message)
+
+            response = self.client.table("logs").insert(log_entry).execute()
+
+            if not response.data:
+                raise DatabaseOperationError(
+                    "Failed to insert log entry - no data returned", None
+                )
+
+            logger.debug(f"Successfully logged entry to Supabase: {log_entry.get('message', 'No message')}")
 
         except Exception as e:
-            raise ValueError(f"Failed to log message: {e!s}") from e
+            error_msg = DatabaseError.format_error(DatabaseError.SAVE_ERROR, e)
+            logger.error(error_msg)
+            raise DatabaseOperationError(error_msg, e) from e
 
 
 class PickleHandler:
     """Handler for saving and loading data using pickle.
+
+    Note: This class maintains local file operations for backward compatibility.
+    Consider migrating to Supabase-based storage for production use.
 
     Attributes:
         file_path: The path to the pickle file.
@@ -139,7 +171,6 @@ class PickleHandler:
         """
         if not file_name.endswith(".pkl"):
             file_name += ".pkl"
-
         self.file_path = os.path.join(os.getcwd(), file_name)
 
     def initialize_file(self) -> None:
@@ -147,8 +178,7 @@ class PickleHandler:
         self.save({})
 
     def save(self, data: Any) -> None:
-        """
-        Save the data to the specified file using pickle.
+        """Save the data to the specified file using pickle.
 
         Args:
           data: The data to be saved to the file.
