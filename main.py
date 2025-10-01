@@ -5,22 +5,16 @@ import os
 from dotenv import load_dotenv
 # Import the SupabaseManager from the crewai package
 from src.crewai.supabase_client import SupabaseManager
-
 # Load environment variables
 load_dotenv()
-
 # Initialize FastAPI app
 app = FastAPI(title="CrewAI Supabase Integration", version="1.0.0")
-
 # Initialize Supabase manager
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
-
 if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
-
-supabase_manager = SupabaseManager(url=supabase_url, key=supabase_key)
-
+supabase_manager = SupabaseManager(supabase_url, supabase_key)
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -29,7 +23,6 @@ async def root():
         "status": "running",
         "version": "1.0.0"
     }
-
 @app.post("/run_crew/")
 async def run_crew(payload: Dict[str, Any]):
     """
@@ -57,7 +50,6 @@ async def run_crew(payload: Dict[str, Any]):
             status_code=500,
             detail=f"Failed to store data: {str(e)}"
         )
-
 @app.get("/results/{table_name}")
 async def get_results(table_name: str):
     """
@@ -83,7 +75,6 @@ async def get_results(table_name: str):
             status_code=500,
             detail=f"Failed to retrieve data: {str(e)}"
         )
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
