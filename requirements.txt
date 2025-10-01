@@ -1,4 +1,4 @@
-crewai @ git+https://github.com/crewAIInc/crewAI.git@main
+crewai @ git+https://github.com/cantycode-svg/crewAI.git@main
 pydantic>=2.11.9
 supabase>=2.0.0
 python-dotenv>=1.0.0
