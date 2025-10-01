@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import Any, Dict
 import os
 from dotenv import load_dotenv
@@ -26,14 +25,6 @@ if not supabase_url or not supabase_key:
 supabase_manager = SupabaseManager(url=supabase_url, key=supabase_key)
 
 
-class CrewRunPayload(BaseModel):
-    """Payload model for crew run results"""
-    crew_name: str
-    status: str
-    result: Dict[str, Any]
-    metadata: Dict[str, Any] = {}
-
-
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -45,68 +36,58 @@ async def root():
 
 
 @app.post("/run_crew/")
-async def run_crew(payload: CrewRunPayload):
+async def run_crew(payload: Dict[str, Any]):
     """
     Execute crew run and store results in Supabase.
+    Accepts any JSON payload without validation.
     
     Args:
-        payload: CrewRunPayload containing crew execution data
+        payload: Dictionary containing any JSON data
     
     Returns:
         Success response with inserted data ID
     """
     try:
-        # Prepare data for Supabase insertion
-        data_to_insert = {
-            "crew_name": payload.crew_name,
-            "status": payload.status,
-            "result": payload.result,
-            "metadata": payload.metadata,
-        }
-        
         # Insert data into Supabase 'results' table
-        response = supabase_manager.insert_data('results', data_to_insert)
+        response = supabase_manager.insert_data('results', payload)
         
         return {
             "success": True,
-            "message": "Crew results stored successfully",
+            "message": "Data stored successfully in Supabase",
             "data": response
         }
     
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to store crew results: {str(e)}"
+            detail=f"Failed to store data: {str(e)}"
         )
 
 
-@app.get("/results/{crew_name}")
-async def get_results(crew_name: str):
+@app.get("/results/{table_name}")
+async def get_results(table_name: str):
     """
-    Retrieve crew results from Supabase by crew name.
+    Retrieve all results from Supabase by table name.
     
     Args:
-        crew_name: Name of the crew to retrieve results for
+        table_name: Name of the table to retrieve results from
     
     Returns:
-        List of results for the specified crew
+        List of results from the specified table
     """
     try:
-        response = supabase_manager.query_data(
-            'results',
-            filters={'crew_name': crew_name}
-        )
+        response = supabase_manager.query_data(table_name, filters={})
         
         return {
             "success": True,
-            "crew_name": crew_name,
+            "table_name": table_name,
             "results": response
         }
     
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to retrieve crew results: {str(e)}"
+            detail=f"Failed to retrieve data: {str(e)}"
         )
 
 
