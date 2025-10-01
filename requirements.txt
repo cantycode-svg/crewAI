@@ -1,5 +1,5 @@
-crewai @ git+https://github.com/cantycode-svg/crewAI.git@main
-pydantic>=2.11.9
+crewai==0.130.0
+pydantic==1.10.14
 supabase>=2.0.0
 python-dotenv>=1.0.0
 fastapi
