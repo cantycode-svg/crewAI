@@ -1,3 +1,4 @@
+# Force redeploy - accepts any JSON payload
 from fastapi import FastAPI, HTTPException
 from typing import Any, Dict
 import os
@@ -24,7 +25,6 @@ if not supabase_url or not supabase_key:
 
 supabase_manager = SupabaseManager(url=supabase_url, key=supabase_key)
 
-
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -33,7 +33,6 @@ async def root():
         "status": "running",
         "version": "1.0.0"
     }
-
 
 @app.post("/run_crew/")
 async def run_crew(payload: Dict[str, Any]):
@@ -63,7 +62,6 @@ async def run_crew(payload: Dict[str, Any]):
             detail=f"Failed to store data: {str(e)}"
         )
 
-
 @app.get("/results/{table_name}")
 async def get_results(table_name: str):
     """
@@ -89,7 +87,6 @@ async def get_results(table_name: str):
             status_code=500,
             detail=f"Failed to retrieve data: {str(e)}"
         )
-
 
 if __name__ == "__main__":
     import uvicorn
