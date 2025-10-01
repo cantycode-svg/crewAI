@@ -1,5 +1,4 @@
 from typing import Any, Dict, Type
-
 from pydantic import BaseModel
 
 
@@ -16,7 +15,8 @@ def process_config(
     Returns:
         Dict[str, Any]: The updated values dictionary.
     """
-    config = values.get("config", {})
+    config = values.dict().get("config", {})
+
     if not config:
         return values
 
@@ -36,4 +36,5 @@ def process_config(
 
     # Remove the config from values to avoid duplicate processing
     values.pop("config", None)
+
     return values
