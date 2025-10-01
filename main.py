@@ -1,80 +1,58 @@
-# Force redeploy - accepts any JSON payload
-from fastapi import FastAPI, HTTPException
-from typing import Any, Dict
-import os
+# Example Crew instantiation with SupabaseStorage as external_memory
 from dotenv import load_dotenv
-# Import the SupabaseManager from the crewai package
-from src.crewai.supabase_client import SupabaseManager
+import os
+from src.crewai.crew import Crew
+from src.crewai.agent import Agent
+from src.crewai.task import Task
+from src.crewai.supabase_storage import SupabaseStorage
+from src.crewai.process import Process
+
 # Load environment variables
 load_dotenv()
-# Initialize FastAPI app
-app = FastAPI(title="CrewAI Supabase Integration", version="1.0.0")
-# Initialize Supabase manager
+
+# Initialize SupabaseStorage
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
+
 if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
-supabase_manager = SupabaseManager(supabase_url, supabase_key)
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "message": "CrewAI Supabase Integration API",
-        "status": "running",
-        "version": "1.0.0"
-    }
-@app.post("/run_crew/")
-async def run_crew(payload: Dict[str, Any]):
-    """
-    Execute crew run and store results in Supabase.
-    Accepts any JSON payload without validation.
-    
-    Args:
-        payload: Dictionary containing any JSON data
-    
-    Returns:
-        Success response with inserted data ID
-    """
-    try:
-        # Insert data into Supabase 'results' table
-        response = supabase_manager.insert_data('results', payload)
-        
-        return {
-            "success": True,
-            "message": "Data stored successfully in Supabase",
-            "data": response
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to store data: {str(e)}"
-        )
-@app.get("/results/{table_name}")
-async def get_results(table_name: str):
-    """
-    Retrieve all results from Supabase by table name.
-    
-    Args:
-        table_name: Name of the table to retrieve results from
-    
-    Returns:
-        List of results from the specified table
-    """
-    try:
-        response = supabase_manager.query_data(table_name, filters={})
-        
-        return {
-            "success": True,
-            "table_name": table_name,
-            "results": response
-        }
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve data: {str(e)}"
-        )
+
+# Instantiate SupabaseStorage for external memory
+supabase_storage = SupabaseStorage(
+    supabase_url=supabase_url,
+    supabase_key=supabase_key
+)
+
+# Define an example agent
+researcher = Agent(
+    role='Senior Research Analyst',
+    goal='Uncover cutting-edge developments in AI',
+    backstory="""You are a senior research analyst with expertise in 
+    identifying emerging trends and breakthrough developments in artificial intelligence.""",
+    verbose=True
+)
+
+# Define an example task
+research_task = Task(
+    description="""Conduct a comprehensive analysis of the latest AI developments 
+    and provide key insights about emerging trends.""",
+    expected_output="A detailed report on current AI trends and breakthroughs",
+    agent=researcher
+)
+
+# Create a Crew with SupabaseStorage wired as external_memory
+crew = Crew(
+    agents=[researcher],
+    tasks=[research_task],
+    process=Process.sequential,
+    external_memory=supabase_storage,  # Wire up SupabaseStorage as external memory
+    verbose=True,
+    memory=True  # Enable memory functionality
+)
+
+# Example execution
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("Starting Crew with SupabaseStorage as external memory...")
+    result = crew.kickoff()
+    print("\nCrew execution completed!")
+    print(f"Result: {result}")
