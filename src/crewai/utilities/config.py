@@ -1,7 +1,6 @@
 from typing import Any, Dict, Type
 from pydantic import BaseModel
 
-
 def process_config(
     values: Dict[str, Any], model_class: Type[BaseModel]
 ) -> Dict[str, Any]:
@@ -15,7 +14,10 @@ def process_config(
     Returns:
         Dict[str, Any]: The updated values dictionary.
     """
-    config = values.dict().get("config", {})
+    if hasattr(values, "dict"):
+        config = values.dict().get("config", {})
+    else:
+        config = values.get("config", {})
 
     if not config:
         return values
