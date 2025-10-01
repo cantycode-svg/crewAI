@@ -3,12 +3,8 @@ from fastapi import FastAPI, HTTPException
 from typing import Any, Dict
 import os
 from dotenv import load_dotenv
-
 # Import the SupabaseManager from the crewai package
-try:
-    from src.crewai.supabase_client import SupabaseManager
-except ImportError:
-    from crewai.supabase_client import SupabaseManager
+from src.crewai.supabase_client import SupabaseManager
 
 # Load environment variables
 load_dotenv()
